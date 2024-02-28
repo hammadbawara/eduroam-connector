@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.UiThread
 import androidx.recyclerview.widget.RecyclerView
 import com.hz_apps.autowificonnector.WifiViewAdapter.myViewHolder
 import com.hz_apps.autowificonnector.database.WifiConfig
@@ -17,13 +18,21 @@ import com.hz_apps.autowificonnector.databinding.ItemLayoutBinding
 
 class WifiViewAdapter (
     private val context : Context,
-    private val wifiConfigList : List<WifiConfig>,
     private val itemListeners: WifiViewAdapter.ItemListeners?
 ) : RecyclerView.Adapter<myViewHolder>() {
+
+    private var connectedWifiId: Int = -1
+    private var wifiConfigList : List<WifiConfig> = mutableListOf()
+    private var connectedWifiIdPosition = -1
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): myViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.item_layout, parent, false);
         return myViewHolder(view)
+    }
+
+    fun setWifiConfigList(wifiConfigList: List<WifiConfig>) {
+        this.wifiConfigList = wifiConfigList
     }
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
@@ -39,6 +48,15 @@ class WifiViewAdapter (
             itemListeners?.onItemClicked(position)
         }
 
+        if (wifiConfig.id == connectedWifiId) {
+            connectedWifiIdPosition = position
+            holder.identity.setTextColor(context.getColor(R.color.colorPrimary))
+        } else {
+            holder.identity.setTextColor(context.getColor(R.color.black))
+        }
+
+
+
         holder.editBtn.setOnClickListener {
             if (wifiConfig.isEditAllowed) {
                 val intent = Intent(context, AddViewActivity::class.java)
@@ -53,8 +71,25 @@ class WifiViewAdapter (
 
         }
     }
+
+    fun setConnectedWiFiID(id: Int) {
+        connectedWifiId = id
+    }
     override fun getItemCount(): Int {
         return wifiConfigList.size
+    }
+
+    @UiThread
+    fun updateWiFiID(id: Int) {
+        notifyItemChanged(connectedWifiIdPosition)
+        connectedWifiId = id
+        for (i in wifiConfigList.indices) {
+            if (wifiConfigList[i].id == id) {
+                connectedWifiIdPosition = i
+                notifyItemChanged(i)
+                break
+            }
+        }
     }
 
     interface ItemListeners {

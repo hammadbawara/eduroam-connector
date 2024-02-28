@@ -7,7 +7,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:icon="@drawable/wifi_icon"
-        android:title="Wi-fi"
+        android:title="Wi-Fi"
         app:showAsAction="always" />
     <item
         android:id="@+id/about"
