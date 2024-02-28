@@ -1,5 +1,6 @@
 package com.hz_apps.autowificonnector
 
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
@@ -21,6 +22,7 @@ import com.hz_apps.autowificonnector.database.WifiConfig
 import com.hz_apps.autowificonnector.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
@@ -29,13 +31,22 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
     private lateinit var appDB : AppDatabase
     private lateinit var dao: UserDao
     private lateinit var wifiConfigData : LiveData<List<WifiConfig>>
+    private val CONNECTED_WIFI_ID = "main"
+    private val adapter : WifiViewAdapter by lazy { WifiViewAdapter(this@MainActivity, this@MainActivity) }
+    private var connectJob : Job? = null
+    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindings = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bindings.root)
+
         appDB = AppDatabase.getInstance(applicationContext)
 
         dao = appDB.userDao()
+
+
+        bindings.recyclerView.adapter = adapter
+
 
         CoroutineScope(Dispatchers.IO).launch {
             wifiConfigData = dao.getAll()
@@ -48,8 +59,14 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
                     } else {
                         bindings.noItemSaved.visibility = View.GONE
                     }
-                    val adapter = WifiViewAdapter(this@MainActivity, it, this@MainActivity)
-                    bindings.recyclerView.adapter = adapter
+                    adapter.setWifiConfigList(it)
+
+                    val connectedWifiId = getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).getInt("id", -1)
+
+                    runOnUiThread {
+                        adapter.setConnectedWiFiID(connectedWifiId)
+                        adapter.notifyDataSetChanged()
+                    }
                 }
             }
         }
@@ -69,9 +86,6 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         }
 
 
-
-
-
     }
 
     override fun onItemClicked(position: Int) {
@@ -80,11 +94,16 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         dialog.setTitle(wifiConfig?.ssid)
         dialog.setMessage(wifiConfig?.identity)
         dialog.setPositiveButton("Connect") { dialogInterface: DialogInterface, _: Int ->
-            val result = connectWith(position)
-            dialogInterface.dismiss()
+            if (connectJob != null && connectJob?.isActive == true) {
+                connectJob?.cancel()
+            }
+            connectJob = CoroutineScope(Dispatchers.IO).launch {
+                val result = connectWith(position)
+                dialogInterface.dismiss()
 
-            if (result != 0) {
-                launchConnectFailedDialog()
+                if (result != 0) {
+                    launchConnectFailedDialog()
+                }
             }
         }
         dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, _: Int ->
@@ -130,6 +149,10 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
 
             if (isSaved) {
                 Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT).show()
+                getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).edit().putInt("id", wifiConfig.id).apply()
+                runOnUiThread {
+                    adapter.updateWiFiID(wifiConfig.id)
+                }
                 return 0
             } else {
                 Snackbar.make(bindings.root, "Failed to sent request", Snackbar.LENGTH_SHORT).show()
