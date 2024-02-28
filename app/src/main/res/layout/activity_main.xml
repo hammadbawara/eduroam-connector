@@ -45,6 +45,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/connect_times"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/made_by_textView"
+        app:layout_constraintStart_toStartOf="@+id/recycler_view"
+        app:layout_constraintTop_toBottomOf="@+id/recycler_view" />
+
+    <TextView
         android:id="@+id/made_by_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
