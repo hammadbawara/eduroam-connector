@@ -1,10 +1,10 @@
 package com.hz_apps.autowificonnector
 
 import android.content.DialogInterface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hz_apps.autowificonnector.database.AppDatabase
 import com.hz_apps.autowificonnector.database.WifiConfig
@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AddViewActivity : AppCompatActivity() {
-    private lateinit var bindings : ActivityAddViewBinding
+    private lateinit var bindings: ActivityAddViewBinding
     private var id = 0
     private var ssid = ""
     private var identity = ""
@@ -26,7 +26,7 @@ class AddViewActivity : AppCompatActivity() {
         setContentView(bindings.root)
 
         id = intent.getIntExtra("id", 0)
-        if (id != -0) {
+        if (id != 0) {
             ssid = intent.getStringExtra("ssid")!!
             identity = intent.getStringExtra("identity")!!
             password = intent.getStringExtra("password")!!
@@ -37,7 +37,7 @@ class AddViewActivity : AppCompatActivity() {
 
             bindings.saveBtn.text = "Update"
             supportActionBar?.title = "Update Item"
-        }else {
+        } else {
             supportActionBar?.title = "Add Item"
         }
 
@@ -71,18 +71,24 @@ class AddViewActivity : AppCompatActivity() {
             bindings.passwordTv.error = "Password should not be blank"
             return
         }
-        if(password.length < 8) {
+        if (password.length < 8) {
             bindings.passwordTv.error = "Password length must be 8 letters"
             return
         }
 
         val db = AppDatabase.getInstance(applicationContext)
         val dbDao = db.userDao()
-        val wifiConfig : WifiConfig?
+        val wifiConfig: WifiConfig?
+        // Update
         if (id == 0) {
-            wifiConfig = WifiConfig(ssid = ssid, identity = identity, password = password, isEditAllowed = true)
-        }else {
-            wifiConfig = WifiConfig(id, ssid, identity, password, true)
+            wifiConfig = WifiConfig(
+                ssid = ssid,
+                identity = identity,
+                password = password,
+                isEditAllowed = true
+            )
+        } else {
+            wifiConfig = WifiConfig(id, ssid, identity, password, true, dbDao.getMaxOrder() + 1)
         }
         CoroutineScope(Dispatchers.IO).launch {
             dbDao.insert(wifiConfig)
@@ -100,9 +106,9 @@ class AddViewActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val identity = bindings.identityTv.text.toString()
         val password = bindings.passwordTv.text.toString()
-        if (ssid == this.ssid && identity == this.identity && password == this.password){
+        if (ssid == this.ssid && identity == this.identity && password == this.password) {
             onBackPressed()
-        }else {
+        } else {
             askBeforeExiting()
         }
 

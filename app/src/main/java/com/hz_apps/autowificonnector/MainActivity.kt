@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Menu
@@ -13,6 +12,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
+import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.hz_apps.aboutme.AboutMeActivity
@@ -24,16 +24,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.lang.Exception
 
 class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
-    private lateinit var bindings : ActivityMainBinding
-    private lateinit var appDB : AppDatabase
+    private lateinit var bindings: ActivityMainBinding
+    private lateinit var appDB: AppDatabase
     private lateinit var dao: UserDao
-    private lateinit var wifiConfigData : LiveData<List<WifiConfig>>
+    private lateinit var wifiConfigData: LiveData<List<WifiConfig>>
     private val CONNECTED_WIFI_ID = "main"
-    private val adapter : WifiViewAdapter by lazy { WifiViewAdapter(this@MainActivity, this@MainActivity) }
-    private var connectJob : Job? = null
+    private val adapter: WifiViewAdapter by lazy {
+        WifiViewAdapter(
+            this@MainActivity,
+            this@MainActivity
+        )
+    }
+    private var connectJob: Job? = null
+
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +51,8 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
 
 
         bindings.recyclerView.adapter = adapter
+        val itemTouchHelper = ItemTouchHelper(MyItemTouchHelper(adapter, dao))
+        itemTouchHelper.attachToRecyclerView(bindings.recyclerView)
 
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -61,7 +68,8 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
                     }
                     adapter.setWifiConfigList(it)
 
-                    val connectedWifiId = getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).getInt("id", -1)
+                    val connectedWifiId =
+                        getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).getInt("id", -1)
 
                     runOnUiThread {
                         adapter.setConnectedWiFiID(connectedWifiId)
@@ -77,11 +85,12 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         }
 
         bindings.madeByTextView.setOnClickListener {
-            try{
+            try {
                 val uri = Uri.parse("https://www.instagram.com/hammadbawara/")
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 startActivity(intent)
-            }catch (ignored : Exception){}
+            } catch (ignored: Exception) {
+            }
 
         }
 
@@ -117,9 +126,11 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
 
     private fun launchConnectFailedDialog() {
         val dialog = MaterialAlertDialogBuilder(this)
-        dialog.setMessage("Request Sending Failed.\n" +
-                "Solution:\n" +
-                "If you're already connected to the 'eduroam' network, go to settings and forget the 'eduroam' network. Then try again.")
+        dialog.setMessage(
+            "Request Sending Failed.\n" +
+                    "Solution:\n" +
+                    "If you're already connected to the 'eduroam' network, go to settings and forget the 'eduroam' network. Then try again."
+        )
         dialog.setTitle("Connection Request Failed")
         dialog.setPositiveButton("Open Wi-Fi Settings") { dialogInterface: DialogInterface, _: Int ->
             openWifiSettings()
@@ -136,11 +147,16 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         connectWith(position)
     }
 
-    private fun connectWith(position : Int) : Int {
+    private fun connectWith(position: Int): Int {
 
-        val wifiConfig : WifiConfig? = wifiConfigData.value?.get(position)
+        val wifiConfig: WifiConfig? = wifiConfigData.value?.get(position)
         if (wifiConfig != null) {
-            var isSaved = WifiConnector.connectToEAPWifi(this, wifiConfig.ssid, wifiConfig.identity, wifiConfig.password)
+            var isSaved = WifiConnector.connectToEAPWifi(
+                this,
+                wifiConfig.ssid,
+                wifiConfig.identity,
+                wifiConfig.password
+            )
 //            if (Build.VERSION.SDK_INT < 29) {
 //                isSaved =
 //            }else {
@@ -148,8 +164,10 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
 //            }
 
             if (isSaved) {
-                Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT).show()
-                getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).edit().putInt("id", wifiConfig.id).apply()
+                Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT)
+                    .show()
+                getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).edit()
+                    .putInt("id", wifiConfig.id).apply()
                 runOnUiThread {
                     adapter.updateWiFiID(wifiConfig.id)
                 }
@@ -157,20 +175,21 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
             } else {
                 Snackbar.make(bindings.root, "Failed to sent request", Snackbar.LENGTH_SHORT).show()
             }
-        }else {
+        } else {
             Snackbar.make(bindings.root, "Something went wrong", Snackbar.LENGTH_SHORT).show()
         }
         return -1
     }
 
-    private fun deleteItem(position :Int) {
+    private fun deleteItem(position: Int) {
         val wifiConfig = wifiConfigData.value?.get(position)
         CoroutineScope(Dispatchers.IO).launch {
             if (wifiConfig != null) {
                 dao.deleteItem(wifiConfig.id)
-            }else {
+            } else {
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Something went wrong", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Something went wrong", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
@@ -186,9 +205,14 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.open_Wifi) {
             openWifiSettings()
-        }else if(item.itemId == R.id.about) {
+        } else if (item.itemId == R.id.about) {
             val intent = Intent(this, AboutMeActivity::class.java)
-            val appName = packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0))
+            val appName = packageManager.getApplicationLabel(
+                packageManager.getApplicationInfo(
+                    packageName,
+                    0
+                )
+            )
             val version = packageManager.getPackageInfo(packageName, 0).versionName
             intent.putExtra("app_name", appName)
             intent.putExtra("version", version)

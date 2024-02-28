@@ -1,6 +1,6 @@
 package com.hz_apps.autowificonnector.database
 
-class DBRepository (
+class DBRepository(
     private val dbDao: UserDao
 ) {
     fun getAllConfigs() {

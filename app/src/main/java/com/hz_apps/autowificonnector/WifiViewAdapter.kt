@@ -5,8 +5,6 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView.OnItemClickListener
-import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -14,16 +12,25 @@ import androidx.annotation.UiThread
 import androidx.recyclerview.widget.RecyclerView
 import com.hz_apps.autowificonnector.WifiViewAdapter.myViewHolder
 import com.hz_apps.autowificonnector.database.WifiConfig
-import com.hz_apps.autowificonnector.databinding.ItemLayoutBinding
+import java.util.Collections
 
-class WifiViewAdapter (
-    private val context : Context,
+class WifiViewAdapter(
+    private val context: Context,
     private val itemListeners: WifiViewAdapter.ItemListeners?
 ) : RecyclerView.Adapter<myViewHolder>() {
 
     private var connectedWifiId: Int = -1
-    private var wifiConfigList : List<WifiConfig> = mutableListOf()
+    private var wifiConfigList: List<WifiConfig> = mutableListOf()
     private var connectedWifiIdPosition = -1
+
+    fun onItemMove(fromPosition: Int, toPosition: Int) {
+        Collections.swap(wifiConfigList, fromPosition, toPosition)
+        notifyItemMoved(fromPosition, toPosition)
+    }
+
+    fun setItemOrder(position: Int, order: Int) {
+        wifiConfigList[position].order = order
+    }
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): myViewHolder {
@@ -37,7 +44,7 @@ class WifiViewAdapter (
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
         val wifiConfig = wifiConfigList[position]
-        holder.number.text = (position + 1 ).toString() + " -"
+        holder.number.text = (position + 1).toString() + " -"
         holder.ssid.text = wifiConfig.ssid
         holder.identity.text = wifiConfig.identity
         holder.itemView.setOnClickListener {
@@ -65,7 +72,7 @@ class WifiViewAdapter (
                 intent.putExtra("identity", wifiConfig.identity)
                 intent.putExtra("password", wifiConfig.password)
                 context.startActivity(intent)
-            }else {
+            } else {
                 Toast.makeText(context, "You can't edit this", Toast.LENGTH_SHORT).show()
             }
 
@@ -75,6 +82,7 @@ class WifiViewAdapter (
     fun setConnectedWiFiID(id: Int) {
         connectedWifiId = id
     }
+
     override fun getItemCount(): Int {
         return wifiConfigList.size
     }
@@ -92,15 +100,23 @@ class WifiViewAdapter (
         }
     }
 
+    fun getWifiConfig(position: Int): WifiConfig {
+        return wifiConfigList[position]
+    }
+
+    fun getWiFiConfigList(): List<WifiConfig> {
+        return wifiConfigList
+    }
+
     interface ItemListeners {
-        fun onItemClicked(position : Int)
+        fun onItemClicked(position: Int)
         fun onItemLongClick(position: Int)
     }
 
     class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val number : TextView = itemView.findViewById(R.id.number)
-        val ssid : TextView = itemView.findViewById(R.id.wifi_ssid)
-        val identity : TextView = itemView.findViewById(R.id.identity)
-        val editBtn : ImageButton = itemView.findViewById(R.id.edit_button)
+        val number: TextView = itemView.findViewById(R.id.number)
+        val ssid: TextView = itemView.findViewById(R.id.wifi_ssid)
+        val identity: TextView = itemView.findViewById(R.id.identity)
+        val editBtn: ImageButton = itemView.findViewById(R.id.edit_button)
     }
 }

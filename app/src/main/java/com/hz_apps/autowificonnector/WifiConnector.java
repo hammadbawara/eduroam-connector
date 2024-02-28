@@ -13,7 +13,6 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiNetworkSuggestion;
 import android.os.PatternMatcher;
-import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
@@ -58,6 +57,7 @@ public class WifiConnector {
 
 
     }
+
     @RequiresApi(api = 29)
     private void connectToAndroid29(Context context, String ssid, String identity, String password) {
         WifiEnterpriseConfig wifiEnterpriseConfig = new WifiEnterpriseConfig();
@@ -81,9 +81,10 @@ public class WifiConnector {
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                 .setNetworkSpecifier(wifiNetworkSpecifier)
                 .build();
-        ConnectivityManager connectivityManager = (ConnectivityManager)context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         connectivityManager.requestNetwork(networkRequest, new ConnectivityManager.NetworkCallback());
     }
+
     @RequiresApi(api = 29)
     public static boolean connectToEAPWifi29(Context context, String ssid, String identity, String password) {
         checkAndRequestFineLocationPermission(context, 1);
@@ -132,6 +133,7 @@ public class WifiConnector {
             return false;
         }
     }
+
     @RequiresApi(api = 29)
     public static boolean connectToEAPWifi299(Context context, String ssid, String identity, String password) {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
@@ -168,8 +170,6 @@ public class WifiConnector {
 
         return true;
     }
-
-
 
 
     private static void turnOffAndOnWifi(WifiManager wifiManager) {
