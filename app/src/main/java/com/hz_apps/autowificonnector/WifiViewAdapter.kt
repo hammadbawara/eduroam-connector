@@ -75,7 +75,10 @@ class WifiViewAdapter(
             } else {
                 Toast.makeText(context, "You can't edit this", Toast.LENGTH_SHORT).show()
             }
+        }
 
+        holder.connectBtn.setOnClickListener {
+            itemListeners?.OnRightBtnClick(position)
         }
     }
 
@@ -111,6 +114,8 @@ class WifiViewAdapter(
     interface ItemListeners {
         fun onItemClicked(position: Int)
         fun onItemLongClick(position: Int)
+
+        fun OnRightBtnClick(position: Int)
     }
 
     class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -118,5 +123,6 @@ class WifiViewAdapter(
         val ssid: TextView = itemView.findViewById(R.id.wifi_ssid)
         val identity: TextView = itemView.findViewById(R.id.identity)
         val editBtn: ImageButton = itemView.findViewById(R.id.edit_button)
+        val connectBtn: ImageButton = itemView.findViewById(R.id.connectBtn)
     }
 }

@@ -147,6 +147,10 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         connectWith(position)
     }
 
+    override fun OnRightBtnClick(position: Int) {
+        connectWith(position)
+    }
+
     private fun connectWith(position: Int): Int {
 
         val wifiConfig: WifiConfig? = wifiConfigData.value?.get(position)
