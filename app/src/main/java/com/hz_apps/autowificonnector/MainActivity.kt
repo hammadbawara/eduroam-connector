@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.ItemTouchHelper
+import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.hz_apps.aboutme.AboutMeActivity
@@ -44,8 +45,11 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DynamicColors.applyToActivitiesIfAvailable(application)
         bindings = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bindings.root)
+        supportActionBar?.hide()
+        bindings.materialToolbar.title = "eduroam Connector"
 
         appDB = AppDatabase.getInstance(applicationContext)
 
