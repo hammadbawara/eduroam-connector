@@ -41,12 +41,9 @@
                 android:visibility="gone" />
 
             <TextView
-                android:layout_marginEnd="5dp"
                 android:id="@+id/identity"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:maxLines="1"
-                android:ellipsize="end"
                 android:gravity="center_vertical"
                 android:text="2022CS639@ksk.uet.edu.pk"
                 android:textSize="18dp" />

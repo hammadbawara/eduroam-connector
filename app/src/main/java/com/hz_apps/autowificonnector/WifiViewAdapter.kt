@@ -59,7 +59,7 @@ class WifiViewAdapter(
             connectedWifiIdPosition = position
             holder.identity.setTextColor(context.getColor(R.color.colorPrimary))
         } else {
-            holder.identity.setTextColor(context.resources.getColor(com.google.android.material.R.attr.colorOnSecondary, null))
+            holder.identity.setTextColor(context.getColor(R.color.black))
         }
 
 
