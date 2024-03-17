@@ -24,13 +24,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
     private lateinit var bindings: ActivityMainBinding
     private lateinit var appDB: AppDatabase
     private lateinit var dao: UserDao
     private lateinit var wifiConfigData: LiveData<List<WifiConfig>>
-    private val CONNECTED_WIFI_ID = "main"
+    private val SHARED_PREF = "main"
     private val adapter: WifiViewAdapter by lazy {
         WifiViewAdapter(
             this@MainActivity,
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         )
     }
     private var connectJob: Job? = null
+    private val CONNECT_TIMES = "connect_times"
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,9 +56,10 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         val itemTouchHelper = ItemTouchHelper(MyItemTouchHelper(adapter, dao))
         itemTouchHelper.attachToRecyclerView(bindings.recyclerView)
 
-
         CoroutineScope(Dispatchers.IO).launch {
             wifiConfigData = dao.getAll()
+
+            setConnectedTimes()
 
             runOnUiThread {
                 wifiConfigData.observe(this@MainActivity) {
@@ -69,8 +72,7 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
                     adapter.setWifiConfigList(it)
 
                     val connectedWifiId =
-                        getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).getInt("id", -1)
-
+                        getSharedPreferences(SHARED_PREF, MODE_PRIVATE).getInt("id", -1)
                     runOnUiThread {
                         adapter.setConnectedWiFiID(connectedWifiId)
                         adapter.notifyDataSetChanged()
@@ -144,14 +146,19 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
 
 
     override fun onItemLongClick(position: Int) {
-        connectWith(position)
+        connectJob = CoroutineScope(Dispatchers.IO).launch {
+            connectWith(position)
+        }
+
     }
 
     override fun OnRightBtnClick(position: Int) {
-        connectWith(position)
+        connectJob = CoroutineScope(Dispatchers.IO).launch {
+            connectWith(position)
+        }
     }
 
-    private fun connectWith(position: Int): Int {
+    private suspend fun connectWith(position: Int): Int {
 
         val wifiConfig: WifiConfig? = wifiConfigData.value?.get(position)
         if (wifiConfig != null) {
@@ -170,8 +177,12 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
             if (isSaved) {
                 Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT)
                     .show()
-                getSharedPreferences(CONNECTED_WIFI_ID, MODE_PRIVATE).edit()
-                    .putInt("id", wifiConfig.id).apply()
+                getSharedPreferences(SHARED_PREF, MODE_PRIVATE).edit()
+                    .putInt("id", wifiConfig.id)
+                    .putInt(CONNECT_TIMES, getSharedPreferences(SHARED_PREF, MODE_PRIVATE).getInt(CONNECT_TIMES, 0) + 1)
+                    .apply()
+
+                setConnectedTimes()
                 runOnUiThread {
                     adapter.updateWiFiID(wifiConfig.id)
                 }
@@ -183,6 +194,16 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
             Snackbar.make(bindings.root, "Something went wrong", Snackbar.LENGTH_SHORT).show()
         }
         return -1
+    }
+
+    suspend fun setConnectedTimes() {
+        val connectTimes = getSharedPreferences(SHARED_PREF, MODE_PRIVATE).getInt(
+            CONNECT_TIMES,
+            0
+        )
+        withContext(Dispatchers.Main) {
+            bindings.connectTimes.text = "Connected: $connectTimes"
+        }
     }
 
     private fun deleteItem(position: Int) {
