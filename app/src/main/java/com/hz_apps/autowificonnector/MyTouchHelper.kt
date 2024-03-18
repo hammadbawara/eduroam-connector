@@ -3,6 +3,7 @@ package com.hz_apps.autowificonnector
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.hz_apps.autowificonnector.database.UserDao
+import com.hz_apps.autowificonnector.database.WifiConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,8 +36,7 @@ class MyItemTouchHelper(
         CoroutineScope(Dispatchers.IO).launch {
             val list = adapter.getWiFiConfigList()
             for (i in list.indices) {
-                list[i].order = i
-                dbDao.update(list[i])
+                dbDao.updateOrder(list[i].id, i)
             }
         }
     }

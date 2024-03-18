@@ -2,6 +2,7 @@ package com.hz_apps.autowificonnector
 
 import android.content.Context
 import android.content.Intent
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -59,7 +60,10 @@ class WifiViewAdapter(
             connectedWifiIdPosition = position
             holder.identity.setTextColor(context.getColor(R.color.colorPrimary))
         } else {
-            holder.identity.setTextColor(context.getColor(R.color.black))
+            val color = TypedValue()
+            context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, color, true)
+
+            holder.identity.setTextColor(color.data)
         }
 
 

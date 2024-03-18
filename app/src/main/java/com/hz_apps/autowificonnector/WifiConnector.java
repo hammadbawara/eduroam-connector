@@ -12,6 +12,7 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WifiNetworkSuggestion;
+import android.os.Build;
 import android.os.PatternMatcher;
 
 import androidx.annotation.RequiresApi;
@@ -39,6 +40,11 @@ public class WifiConnector {
         wifiConfig.enterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.MSCHAPV2);
         wifiConfig.enterpriseConfig.setIdentity(identity);
         wifiConfig.enterpriseConfig.setPassword(password);
+//        wifiConfig.enterpriseConfig.setCaCertificate(null);
+//        if (Build.VERSION.SDK_INT > 32) {
+//            wifiConfig.setMacRandomizationSetting(WifiConfiguration.RANDOMIZATION_NONE);
+//        }
+
 
         int netId = wifiManager.addNetwork(wifiConfig);
         if (netId != -1) {

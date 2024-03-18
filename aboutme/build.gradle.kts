@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.hz_apps.aboutme"
-    compileSdk = 34
+    compileSdk = 28
 
     defaultConfig {
         minSdk = 21

@@ -21,6 +21,9 @@ interface UserDao {
     @Update
     fun update(wifiConfig: WifiConfig)
 
+    @Query("UPDATE wifi_configurations SET `order` = :order WHERE id = :id")
+    fun updateOrder(id: Int, order: Int)
+
     @Query("SELECT MAX(`order`) FROM wifi_configurations")
     fun getMaxOrder(): Int
 

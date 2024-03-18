@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.distinctUntilChanged
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -105,6 +106,7 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
         dialog.setTitle(wifiConfig?.ssid)
         dialog.setMessage(wifiConfig?.identity)
         dialog.setPositiveButton("Connect") { dialogInterface: DialogInterface, _: Int ->
+            dialogInterface.dismiss()
             if (connectJob != null && connectJob?.isActive == true) {
                 connectJob?.cancel()
             }
@@ -127,21 +129,23 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
     }
 
     private fun launchConnectFailedDialog() {
-        val dialog = MaterialAlertDialogBuilder(this)
-        dialog.setMessage(
-            "Request Sending Failed.\n" +
-                    "Solution:\n" +
-                    "If you're already connected to the 'eduroam' network, go to settings and forget the 'eduroam' network. Then try again."
-        )
-        dialog.setTitle("Connection Request Failed")
-        dialog.setPositiveButton("Open Wi-Fi Settings") { dialogInterface: DialogInterface, _: Int ->
-            openWifiSettings()
-            dialogInterface.dismiss()
+        runOnUiThread {
+            val dialog = MaterialAlertDialogBuilder(this)
+            dialog.setMessage(
+                "Request Sending Failed.\n" +
+                        "Solution:\n" +
+                        "If you're already connected to the 'eduroam' network, go to settings and forget the 'eduroam' network. Then try again."
+            )
+            dialog.setTitle("Connection Request Failed")
+            dialog.setPositiveButton("Open Wi-Fi Settings") { dialogInterface: DialogInterface, _: Int ->
+                openWifiSettings()
+                dialogInterface.dismiss()
+            }
+            dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, _: Int ->
+                dialogInterface.dismiss()
+            }
+            dialog.show()
         }
-        dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, _: Int ->
-            dialogInterface.dismiss()
-        }
-        dialog.show()
     }
 
 
