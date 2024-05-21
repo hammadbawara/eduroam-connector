@@ -63,18 +63,6 @@ class AddViewActivity : AppCompatActivity() {
             bindings.identityTv.error = "Identity should not be blank"
             return
         }
-        if (!Patterns.EMAIL_ADDRESS.matcher(identity).matches()) {
-            bindings.identityTv.error = "Enter correct email"
-            return
-        }
-        if (password.isBlank()) {
-            bindings.passwordTv.error = "Password should not be blank"
-            return
-        }
-        if (password.length < 8) {
-            bindings.passwordTv.error = "Password length must be 8 letters"
-            return
-        }
 
         val db = AppDatabase.getInstance(applicationContext)
         val dbDao = db.userDao()
