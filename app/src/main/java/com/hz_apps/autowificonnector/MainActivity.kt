@@ -1,6 +1,5 @@
 package com.hz_apps.autowificonnector
 
-import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
@@ -11,75 +10,49 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.distinctUntilChanged
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.hz_apps.aboutme.AboutMeActivity
-import com.hz_apps.autowificonnector.database.AppDatabase
-import com.hz_apps.autowificonnector.database.UserDao
 import com.hz_apps.autowificonnector.database.WifiConfig
 import com.hz_apps.autowificonnector.databinding.ActivityMainBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
+class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTouchHelperCallback {
+
     private lateinit var bindings: ActivityMainBinding
-    private lateinit var appDB: AppDatabase
-    private lateinit var dao: UserDao
-    private lateinit var wifiConfigData: LiveData<List<WifiConfig>>
-    private val SHARED_PREF = "main"
     private val adapter: WifiViewAdapter by lazy {
-        WifiViewAdapter(
-            this@MainActivity,
-            this@MainActivity
-        )
+        WifiViewAdapter(this@MainActivity, this@MainActivity)
     }
-    private var connectJob: Job? = null
-    private val CONNECT_TIMES = "connect_times"
+    private lateinit var viewModel: MainViewModel
 
-    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindings = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
-        appDB = AppDatabase.getInstance(applicationContext)
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-        dao = appDB.userDao()
-
-
+        // Setup RecyclerView
         bindings.recyclerView.adapter = adapter
-        val itemTouchHelper = ItemTouchHelper(MyItemTouchHelper(adapter, dao))
+        val itemTouchHelper = ItemTouchHelper(MyItemTouchHelper { fromPosition, toPosition ->
+            viewModel.onItemMove(fromPosition, toPosition) // Notify ViewModel of the move
+            viewModel.updateWiFiConfigOrder() // Update the database
+            adapter.onItemMove(fromPosition, toPosition) // Notify the adapter of the move
+            FirebaseLogger.logItemMoved("item_moved")
+        })
         itemTouchHelper.attachToRecyclerView(bindings.recyclerView)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            wifiConfigData = dao.getAll()
-
-            setConnectedTimes()
-
-            runOnUiThread {
-                wifiConfigData.observe(this@MainActivity) {
-
-                    if (it.isEmpty()) {
-                        bindings.noItemSaved.visibility = View.VISIBLE
-                    } else {
-                        bindings.noItemSaved.visibility = View.GONE
-                    }
-                    adapter.setWifiConfigList(it)
-
-                    val connectedWifiId =
-                        getSharedPreferences(SHARED_PREF, MODE_PRIVATE).getInt("id", -1)
-                    runOnUiThread {
-                        adapter.setConnectedWiFiID(connectedWifiId)
-                        adapter.notifyDataSetChanged()
-                    }
-                }
+        viewModel.wifiConfigData.observe(this) { configList ->
+            if (configList.isEmpty()) {
+                bindings.noItemSaved.visibility = View.VISIBLE
+            } else {
+                bindings.noItemSaved.visibility = View.GONE
             }
+            adapter.setWifiConfigList(configList)
+
         }
 
         bindings.floatingActionButton.setOnClickListener {
@@ -89,141 +62,58 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
 
         bindings.madeByTextView.setOnClickListener {
             try {
+                FirebaseLogger.logBtnClick("Instagram ID clicked")
                 val uri = Uri.parse("https://www.instagram.com/hammadbawara/")
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 startActivity(intent)
             } catch (ignored: Exception) {
             }
-
         }
 
-
+        // Set connected times on screen
+        viewModel.setConnectedTimes {
+            bindings.connectTimes.text = "Connected: $it"
+        }
     }
 
     override fun onItemClicked(position: Int) {
-        val wifiConfig = wifiConfigData.value?.get(position)
+        val wifiConfig = viewModel.wifiConfigData.value?.get(position)
         val dialog = MaterialAlertDialogBuilder(this)
         dialog.setTitle(wifiConfig?.ssid)
         dialog.setMessage(wifiConfig?.identity)
         dialog.setPositiveButton("Connect") { dialogInterface: DialogInterface, _: Int ->
-            dialogInterface.dismiss()
-            if (connectJob != null && connectJob?.isActive == true) {
-                connectJob?.cancel()
-            }
-            connectJob = CoroutineScope(Dispatchers.IO).launch {
-                val result = connectWith(position)
-                dialogInterface.dismiss()
-
-                if (result != 0) {
-                    launchConnectFailedDialog()
+            viewModel.connectWith(position, viewModel.wifiConfigData.value ?: emptyList(),
+                onSuccess = {
+                    adapter.updateWiFiID(it)
+                    Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT).show()
+                    FirebaseLogger.logWifiConnected(wifiConfig?.identity ?: "")
+                },
+                onError = {
+                    Snackbar.make(bindings.root, it, Snackbar.LENGTH_SHORT).show()
+                    FirebaseLogger.logWifiConnectFailed(wifiConfig?.identity ?: "")
                 }
-            }
+            )
+            dialogInterface.dismiss()
         }
         dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, _: Int ->
             dialogInterface.dismiss()
+            FirebaseLogger.logBtnClick("Click Dialog Btn")
         }
         dialog.setNeutralButton("Delete") { _: DialogInterface, _: Int ->
-            deleteItem(position)
+            viewModel.deleteItem(wifiConfig) {
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+                FirebaseLogger.logWifiDeleted(wifiConfig?.identity ?: "")
+            }
         }
         dialog.show()
     }
 
-    private fun launchConnectFailedDialog() {
-        runOnUiThread {
-            val dialog = MaterialAlertDialogBuilder(this)
-            dialog.setMessage(
-                "Request Sending Failed.\n" +
-                        "Solution:\n" +
-                        "If you're already connected to the 'eduroam' network, go to settings and forget the 'eduroam' network. Then try again."
-            )
-            dialog.setTitle("Connection Request Failed")
-            dialog.setPositiveButton("Open Wi-Fi Settings") { dialogInterface: DialogInterface, _: Int ->
-                openWifiSettings()
-                dialogInterface.dismiss()
-            }
-            dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, _: Int ->
-                dialogInterface.dismiss()
-            }
-            dialog.show()
-        }
-    }
-
-
     override fun onItemLongClick(position: Int) {
-        connectJob = CoroutineScope(Dispatchers.IO).launch {
-            connectWith(position)
-        }
-
+        onItemClicked(position)
     }
 
     override fun OnRightBtnClick(position: Int) {
-        connectJob = CoroutineScope(Dispatchers.IO).launch {
-            connectWith(position)
-        }
-    }
-
-    private suspend fun connectWith(position: Int): Int {
-
-        val wifiConfig: WifiConfig? = wifiConfigData.value?.get(position)
-        if (wifiConfig != null) {
-            var isSaved = WifiConnector.connectToEAPWifi(
-                this,
-                wifiConfig.ssid,
-                wifiConfig.identity,
-                wifiConfig.password
-            )
-//            if (Build.VERSION.SDK_INT < 29) {
-//                isSaved =
-//            }else {
-//                isSaved = WifiConnector.connectToEAPWifi299(this, wifiConfig.ssid, wifiConfig.identity, wifiConfig.password)
-//            }
-
-            if (isSaved) {
-                Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT)
-                    .show()
-                getSharedPreferences(SHARED_PREF, MODE_PRIVATE).edit()
-                    .putInt("id", wifiConfig.id)
-                    .putInt(CONNECT_TIMES, getSharedPreferences(SHARED_PREF, MODE_PRIVATE).getInt(CONNECT_TIMES, 0) + 1)
-                    .apply()
-
-                setConnectedTimes()
-                runOnUiThread {
-                    adapter.updateWiFiID(wifiConfig.id)
-                }
-                return 0
-            } else {
-                Snackbar.make(bindings.root, "Failed to sent request", Snackbar.LENGTH_SHORT).show()
-            }
-        } else {
-            Snackbar.make(bindings.root, "Something went wrong", Snackbar.LENGTH_SHORT).show()
-        }
-        return -1
-    }
-
-    suspend fun setConnectedTimes() {
-        val connectTimes = getSharedPreferences(SHARED_PREF, MODE_PRIVATE).getInt(
-            CONNECT_TIMES,
-            0
-        )
-        withContext(Dispatchers.Main) {
-            bindings.connectTimes.text = "Connected: $connectTimes"
-        }
-    }
-
-    private fun deleteItem(position: Int) {
-        val wifiConfig = wifiConfigData.value?.get(position)
-        CoroutineScope(Dispatchers.IO).launch {
-            if (wifiConfig != null) {
-                dao.deleteItem(wifiConfig.id)
-            } else {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Something went wrong", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        }
-
-
+        onItemClicked(position)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -232,27 +122,30 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.open_Wifi) {
-            openWifiSettings()
-        } else if (item.itemId == R.id.about) {
-            val intent = Intent(this, AboutMeActivity::class.java)
-            val appName = packageManager.getApplicationLabel(
-                packageManager.getApplicationInfo(
-                    packageName,
-                    0
-                )
-            )
-            val version = packageManager.getPackageInfo(packageName, 0).versionName
-            intent.putExtra("app_name", appName)
-            intent.putExtra("version", version)
-            intent.putExtra("app_icon", R.mipmap.ic_launcher)
-            startActivity(intent)
+        when (item.itemId) {
+            R.id.open_Wifi -> openWifiSettings()
+            R.id.about -> openAboutActivity()
         }
         return super.onOptionsItemSelected(item)
     }
 
     private fun openWifiSettings() {
+        FirebaseLogger.logBtnClick("Open Wifi Settings")
         val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
         startActivity(intent)
+    }
+
+    private fun openAboutActivity() {
+        FirebaseLogger.logBtnClick("About Me")
+        val intent = Intent(this, AboutMeActivity::class.java)
+        startActivity(intent)
+    }
+
+    override fun onItemMove(fromPosition: Int, toPosition: Int) {
+
+    }
+
+    override fun onItemMoved() {
+
     }
 }

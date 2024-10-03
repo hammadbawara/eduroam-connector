@@ -10,7 +10,7 @@ import androidx.room.Update
 @Dao
 interface UserDao {
     @Query("SELECT * FROM wifi_configurations ORDER BY `order` ASC")
-    fun getAll(): LiveData<List<WifiConfig>>
+    fun  getAll(): LiveData<List<WifiConfig>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(wifiConfig: WifiConfig)

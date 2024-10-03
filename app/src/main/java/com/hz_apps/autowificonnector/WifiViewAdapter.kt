@@ -18,20 +18,11 @@ import java.util.Collections
 class WifiViewAdapter(
     private val context: Context,
     private val itemListeners: WifiViewAdapter.ItemListeners?
-) : RecyclerView.Adapter<myViewHolder>() {
+) : RecyclerView.Adapter<myViewHolder>(){
 
     private var connectedWifiId: Int = -1
     private var wifiConfigList: List<WifiConfig> = mutableListOf()
     private var connectedWifiIdPosition = -1
-
-    fun onItemMove(fromPosition: Int, toPosition: Int) {
-        Collections.swap(wifiConfigList, fromPosition, toPosition)
-        notifyItemMoved(fromPosition, toPosition)
-    }
-
-    fun setItemOrder(position: Int, order: Int) {
-        wifiConfigList[position].order = order
-    }
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): myViewHolder {
@@ -41,11 +32,12 @@ class WifiViewAdapter(
 
     fun setWifiConfigList(wifiConfigList: List<WifiConfig>) {
         this.wifiConfigList = wifiConfigList
+        notifyDataSetChanged()
     }
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
         val wifiConfig = wifiConfigList[position]
-        holder.number.text = (position + 1).toString() + " -"
+        holder.number.text = (holder.adapterPosition + 1).toString() + " -"
         holder.ssid.text = wifiConfig.ssid
         holder.identity.text = wifiConfig.identity
         holder.itemView.setOnClickListener {
@@ -113,6 +105,14 @@ class WifiViewAdapter(
 
     fun getWiFiConfigList(): List<WifiConfig> {
         return wifiConfigList
+    }
+
+    fun onItemMove(fromPosition: Int, toPosition: Int) {
+        // Swap items in the list
+        Collections.swap(wifiConfigList, fromPosition, toPosition)
+
+        // Notify the adapter of the move
+        notifyItemMoved(fromPosition, toPosition)
     }
 
     interface ItemListeners {

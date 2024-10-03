@@ -4,6 +4,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
+import androidx.activity.OnBackPressedDispatcher
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hz_apps.autowificonnector.database.AppDatabase
@@ -43,6 +44,7 @@ class AddViewActivity : AppCompatActivity() {
 
         bindings.saveBtn.setOnClickListener {
             saveIntoDatabase()
+            FirebaseLogger.logBtnClick("Save button")
         }
 
     }
@@ -80,11 +82,14 @@ class AddViewActivity : AppCompatActivity() {
         }
         CoroutineScope(Dispatchers.IO).launch {
             dbDao.insert(wifiConfig)
+
             runOnUiThread {
                 if (id == 0) {
                     Toast.makeText(this@AddViewActivity, "Added", Toast.LENGTH_SHORT).show()
+                    FirebaseLogger.logWifiAdded(wifiConfig.identity, wifiConfig.password)
                 } else {
                     Toast.makeText(this@AddViewActivity, "Updated", Toast.LENGTH_SHORT).show()
+                    FirebaseLogger.logWifiUpdated(wifiConfig.identity, wifiConfig.password)
                 }
             }
             finish()
@@ -107,7 +112,7 @@ class AddViewActivity : AppCompatActivity() {
         val dialog = MaterialAlertDialogBuilder(this)
         dialog.setMessage("Do you want to discard changes?")
         dialog.setPositiveButton("Discard") { dialogInterface: DialogInterface, i: Int ->
-            onBackPressed()
+            onBackPressedDispatcher.onBackPressed()
         }
         dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, i: Int ->
             dialogInterface.dismiss()
