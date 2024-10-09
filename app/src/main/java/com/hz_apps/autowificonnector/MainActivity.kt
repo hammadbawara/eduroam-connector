@@ -1,5 +1,6 @@
 package com.hz_apps.autowificonnector
 
+import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
@@ -9,6 +10,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -35,6 +37,12 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
+        if (!viewModel.isActivated) {
+            val intent = Intent(this, ActivationActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+
         // Setup RecyclerView
         bindings.recyclerView.adapter = adapter
         val itemTouchHelper = ItemTouchHelper(MyItemTouchHelper { fromPosition, toPosition ->
@@ -46,6 +54,10 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         itemTouchHelper.attachToRecyclerView(bindings.recyclerView)
 
         viewModel.wifiConfigData.observe(this) { configList ->
+
+            if (viewModel.shouldUpload) {
+                viewModel.uploadConfig(configList)
+            }
             if (configList.isEmpty()) {
                 bindings.noItemSaved.visibility = View.VISIBLE
             } else {
@@ -73,6 +85,11 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         // Set connected times on screen
         viewModel.setConnectedTimes {
             bindings.connectTimes.text = "Connected: $it"
+        }
+
+        val connectedWifiId = viewModel.getConnectedWifiId()
+        if (connectedWifiId != -1) {
+            adapter.updateWiFiID(connectedWifiId)
         }
     }
 
@@ -125,8 +142,18 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         when (item.itemId) {
             R.id.open_Wifi -> openWifiSettings()
             R.id.about -> openAboutActivity()
+            R.id.import_from_csv -> importFromCSV()
+            R.id.export_to_csv -> exportToCSV()
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun importFromCSV() {
+        Toast.makeText(this, "Wait for the next update", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun exportToCSV() {
+        Toast.makeText(this, "Wait for the next update", Toast.LENGTH_SHORT).show()
     }
 
     private fun openWifiSettings() {

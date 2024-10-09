@@ -16,4 +16,10 @@
         android:icon="@drawable/about_icon"
         android:title="About"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/import_from_csv"
+        android:title="Import From CSV" />
+    <item
+        android:id="@+id/export_to_csv"
+        android:title="Export to CSV" />
 </menu>

