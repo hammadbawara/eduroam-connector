@@ -10,6 +10,7 @@ data class WifiConfig(
     val ssid: String,
     val identity: String,
     val password: String,
+    val domain: String,
     val isEditAllowed: Boolean,
     var order: Int = 0
 )

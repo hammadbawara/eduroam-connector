@@ -1,7 +1,10 @@
 package com.hz_apps.autowificonnector
 
 import android.content.DialogInterface
+import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.OnBackPressedDispatcher
@@ -20,6 +23,7 @@ class AddViewActivity : AppCompatActivity() {
     private var ssid = ""
     private var identity = ""
     private var password = ""
+    private var domain = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindings = ActivityAddViewBinding.inflate(layoutInflater)
@@ -47,12 +51,36 @@ class AddViewActivity : AppCompatActivity() {
             FirebaseLogger.logBtnClick("Save button")
         }
 
+        if (Build.VERSION.SDK_INT > 29) {
+            bindings.domainTv.isEnabled = true
+            domain = intent.getStringExtra("domain") ?: ""
+            bindings.domainTv.setText(domain)
+        } else {
+            bindings.domainTv.isEnabled = false
+        }
+
+        bindings.identityTv.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val text = s.toString()
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                if (!Patterns.EMAIL_ADDRESS.matcher(s.toString()).matches()) {
+                    bindings.identityTv.error = "Invalid email"
+                }
+            }
+        })
+
     }
 
     private fun saveIntoDatabase() {
         val ssid = "eduroam"
         val identity = bindings.identityTv.text.toString()
         val password = bindings.passwordTv.text.toString()
+        val domain = bindings.domainTv.text.toString()
 
         bindings.identityTv.error = null
         bindings.ssidTv.error = null
@@ -63,6 +91,11 @@ class AddViewActivity : AppCompatActivity() {
         }
         if (identity.isBlank()) {
             bindings.identityTv.error = "Identity should not be blank"
+            return
+        }
+
+        if (domain.isBlank() && Build.VERSION.SDK_INT > 29) {
+            bindings.domainTv.error = "Domain should not be blank"
             return
         }
 
@@ -80,10 +113,11 @@ class AddViewActivity : AppCompatActivity() {
                     ssid = ssid,
                     identity = identity,
                     password = password,
+                    domain = domain,
                     isEditAllowed = true
                 )
             } else {
-                wifiConfig = WifiConfig(id, ssid, identity, password, true, dbDao.getMaxOrder() + 1)
+                wifiConfig = WifiConfig(id, ssid, identity, password, domain, true, dbDao.getMaxOrder() + 1)
             }
             dbDao.insert(wifiConfig)
 
@@ -104,7 +138,7 @@ class AddViewActivity : AppCompatActivity() {
         val identity = bindings.identityTv.text.toString()
         val password = bindings.passwordTv.text.toString()
         if (ssid == this.ssid && identity == this.identity && password == this.password) {
-            onBackPressed()
+            OnBackPressedDispatcher().onBackPressed()
         } else {
             askBeforeExiting()
         }

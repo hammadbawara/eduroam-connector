@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
 
             if (viewModel.shouldUpload) {
                 viewModel.uploadConfig(configList)
+                viewModel.setShouldUploadFalse()
             }
             if (configList.isEmpty()) {
                 bindings.noItemSaved.visibility = View.VISIBLE

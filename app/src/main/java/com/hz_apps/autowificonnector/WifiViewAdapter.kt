@@ -38,7 +38,6 @@ class WifiViewAdapter(
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
         val wifiConfig = wifiConfigList[position]
         holder.number.text = (holder.adapterPosition + 1).toString() + " -"
-        holder.ssid.text = wifiConfig.ssid
         holder.identity.text = wifiConfig.identity
         holder.itemView.setOnClickListener {
 
@@ -67,6 +66,7 @@ class WifiViewAdapter(
                 intent.putExtra("ssid", wifiConfig.ssid)
                 intent.putExtra("identity", wifiConfig.identity)
                 intent.putExtra("password", wifiConfig.password)
+                intent.putExtra("domain", wifiConfig.domain)
                 context.startActivity(intent)
             } else {
                 Toast.makeText(context, "You can't edit this", Toast.LENGTH_SHORT).show()
@@ -124,7 +124,6 @@ class WifiViewAdapter(
 
     class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val number: TextView = itemView.findViewById(R.id.number)
-        val ssid: TextView = itemView.findViewById(R.id.wifi_ssid)
         val identity: TextView = itemView.findViewById(R.id.identity)
         val editBtn: ImageButton = itemView.findViewById(R.id.edit_button)
         val connectBtn: ImageButton = itemView.findViewById(R.id.connectBtn)

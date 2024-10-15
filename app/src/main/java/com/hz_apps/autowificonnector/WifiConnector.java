@@ -100,7 +100,6 @@ public class WifiConnector {
         wifiEnterpriseConfig.setPhase2Method(WifiEnterpriseConfig.Phase2.MSCHAPV2);
         wifiEnterpriseConfig.setEapMethod(WifiEnterpriseConfig.Eap.PEAP);
 
-        wifiEnterpriseConfig.setCaCertificates();
 
         WifiNetworkSpecifier specifier = new WifiNetworkSpecifier.Builder()
                 .setSsid(ssid)
