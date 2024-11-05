@@ -218,7 +218,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         _connectedWifiId.value = -1
         updateConnectTimesIDInSP()
-
     }
 
     fun isConnected(position: Int): Boolean {
