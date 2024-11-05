@@ -8,14 +8,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.firestore.FirebaseFirestore
 import com.hz_apps.autowificonnector.database.AppDatabase
 import com.hz_apps.autowificonnector.database.UserDao
 import com.hz_apps.autowificonnector.database.WifiConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.InputStreamReader
 import java.util.Collections
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -25,12 +23,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("main", Application.MODE_PRIVATE)
     var shouldUpload = false
-    get
     private set
+
+    private val _showProgressBar = MutableLiveData(false)
+    val showProgressBar: LiveData<Boolean>
+        get() = _showProgressBar
 
     private val _connectTimes = MutableLiveData(0)
     val connectTimes: LiveData<Int>
         get() = _connectTimes
+
+    private val _connectedWifiId = MutableLiveData(-1)
+    val connectedWifiId: LiveData<Int>
+        get() = _connectedWifiId
 
     var isActivated = false
     get
@@ -54,6 +59,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         _connectTimes.value = getConnectedTimes()
+
+        _connectedWifiId.value = getConnectedWifiId()
     }
 
     fun onItemMove(fromPosition: Int, toPosition: Int) {
@@ -81,13 +88,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     @RequiresApi(29)
     private fun connectWith29(wifiConfig: WifiConfig) : Boolean {
         val wifiConnector = WifiConnectorN()
-        val connectedWifiConfig = getConnectedWifi()
-        wifiConnector.removeNetwork(
-            getApplication(),
-            connectedWifiConfig.identity,
-            connectedWifiConfig.password,
-            connectedWifiConfig.domain
-        )
+        disconnectWifi(getConnectedWifi())
         val isConnected = wifiConnector
             .connectToWifi(
                 getApplication(),
@@ -98,8 +99,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return isConnected
     }
 
+    private fun showProgressBar() {
+        viewModelScope.launch(Dispatchers.Main){
+            if (_showProgressBar.value == false)
+                _showProgressBar.value = true
+        }
+
+    }
+
+    private fun hideProgressBar() {
+        viewModelScope.launch(Dispatchers.Main) {
+            if (_showProgressBar.value == true)
+                _showProgressBar.value = false
+        }
+    }
+
     fun connectWith(position: Int, onSuccess: (Int) -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
+            showProgressBar()
             val wifiConfig = wifiConfigList.getOrNull(position)
             if (wifiConfig != null) {
                 val isConnected = if (Build.VERSION.SDK_INT < 29)
@@ -111,11 +128,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (isConnected) {
                         onSuccess(wifiConfig.id)
                         _connectTimes.value = _connectTimes.value?.plus(1)
-                        updateSharedPreferences(wifiConfig.id)
-                        FirebaseLogger.logWifiConnected(wifiConfig?.identity ?: "")
+                        _connectedWifiId.value = wifiConfig.id
+                        updateConnectTimesIDInSP()
+                        FirebaseLogger.logWifiConnected(wifiConfig.identity)
                     } else {
                         onError("Failed to send connect request")
-                        FirebaseLogger.logWifiConnectFailed(wifiConfig?.identity ?: "")
+                        FirebaseLogger.logWifiConnectFailed(wifiConfig.identity)
                     }
                 }
 
@@ -124,22 +142,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     onError("Invalid Wi-Fi configuration")
                 }
             }
+            hideProgressBar()
         }
     }
 
-    private fun getConnectedWifi() : WifiConfig {
-        return wifiConfigList[getConnectedWifiId()]
+    private fun getConnectedWifi() : WifiConfig? {
+        val connectedWifiID = getConnectedWifiId()
+        if (connectedWifiID != -1) {
+            return wifiConfigList[getConnectedWifiId()]
+        }
+        return null
     }
-
-    private fun updateSharedPreferences(wifiId: Int) {
+    // Update connect ID and connect times in shared preference
+    private fun updateConnectTimesIDInSP() {
         with(sharedPreferences.edit()) {
-            putInt("id", wifiId)
+            connectedWifiId.value?.let { putInt("id", it) }
             _connectTimes.value?.let { putInt("connect_times", it) }
             apply()
         }
     }
 
-    fun getConnectedWifiId() : Int {
+    private fun getConnectedWifiId() : Int {
         val id = sharedPreferences.getInt("id", -1)
         return id
     }
@@ -169,5 +192,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setShouldUploadFalse() {
         shouldUpload = false
         sharedPreferences.edit().putBoolean("should_upload", false).apply()
+    }
+
+    @RequiresApi(29)
+    fun disconnectWifi(wifiConfig: WifiConfig?) {
+        if (wifiConfig != null) {
+            val wifiConnector = WifiConnectorN()
+            wifiConnector.removeNetwork(
+                getApplication(),
+                wifiConfig.identity,
+                wifiConfig.password,
+                wifiConfig.domain
+            )
+        }
+
+    }
+
+    @RequiresApi(29)
+    fun disconnectWifi(position: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            showProgressBar()
+            val wifiConfig = wifiConfigData.value!![position]
+            disconnectWifi(wifiConfig)
+            hideProgressBar()
+        }
+        _connectedWifiId.value = -1
+        updateConnectTimesIDInSP()
+
+    }
+
+    fun isConnected(position: Int): Boolean {
+        val wifiConfig = wifiConfigData.value!![position]
+        return wifiConfig.id == connectedWifiId.value
     }
 }
