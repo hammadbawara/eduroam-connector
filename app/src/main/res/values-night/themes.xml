@@ -1,8 +1,9 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.AutoWifiConnector" parent="Theme.Material3.DayNight">
-        <!-- Customize your dark theme here. -->
-        <item name="android:statusBarColor">#00000000</item>
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="actionBarPopupTheme">?attr/popupMenuStyle</item>
+        <item name="actionBarTheme">?attr/actionBarTheme</item>
+        <item name="android:statusBarColor">?attr/colorSurfaceContainer</item>
     </style>
 </resources>

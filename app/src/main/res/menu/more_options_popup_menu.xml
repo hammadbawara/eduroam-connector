@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/connect_popup_menu"
+        android:icon="@drawable/chevron_right"
+        android:title="Connect" />
+    <item
+        android:id="@+id/edit_popup_menu"
+        android:icon="@drawable/edit_button"
+        android:title="Edit" />
+
+    <item
+         android:id="@+id/delete_popup_menu"
+        android:icon="@drawable/baseline_delete_24"
+        android:title="Delete" />
+</menu>

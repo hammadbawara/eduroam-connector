@@ -1,10 +1,11 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.AutoWifiConnector" parent="Theme.Material3.DayNight">
-        <!-- Customize your light theme here. -->
-        <item name="android:statusBarColor">#000000</item>
-        <item name="actionBarDivider">?attr/colorOnPrimary</item>
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="actionBarPopupTheme">@style/Widget.Material3.PopupMenu</item>
+        <item name="popupMenuStyle">@style/Widget.Material3.PopupMenu</item>
+        <item name="actionBarTheme">?attr/actionBarTheme</item>
+        <item name="android:statusBarColor">?attr/colorSurfaceContainer</item>
     </style>
 
     <style name="Theme.AutoWifiConnector" parent="Base.Theme.AutoWifiConnector" />

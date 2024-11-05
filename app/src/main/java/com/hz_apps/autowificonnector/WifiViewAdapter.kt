@@ -57,24 +57,8 @@ class WifiViewAdapter(
             holder.identity.setTextColor(color.data)
         }
 
-
-
-        holder.editBtn.setOnClickListener {
-            if (wifiConfig.isEditAllowed) {
-                val intent = Intent(context, AddViewActivity::class.java)
-                intent.putExtra("id", wifiConfig.id)
-                intent.putExtra("ssid", wifiConfig.ssid)
-                intent.putExtra("identity", wifiConfig.identity)
-                intent.putExtra("password", wifiConfig.password)
-                intent.putExtra("domain", wifiConfig.domain)
-                context.startActivity(intent)
-            } else {
-                Toast.makeText(context, "You can't edit this", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        holder.connectBtn.setOnClickListener {
-            itemListeners?.OnRightBtnClick(position)
+        holder.moreOptions.setOnClickListener {
+            itemListeners?.onMoreOptionClicked(position, holder.moreOptions)
         }
     }
 
@@ -119,13 +103,12 @@ class WifiViewAdapter(
         fun onItemClicked(position: Int)
         fun onItemLongClick(position: Int)
 
-        fun OnRightBtnClick(position: Int)
+        fun onMoreOptionClicked(position: Int, view: View)
     }
 
     class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val number: TextView = itemView.findViewById(R.id.number)
         val identity: TextView = itemView.findViewById(R.id.identity)
-        val editBtn: ImageButton = itemView.findViewById(R.id.edit_button)
-        val connectBtn: ImageButton = itemView.findViewById(R.id.connectBtn)
+        val moreOptions: ImageButton = itemView.findViewById(R.id.more_options)
     }
 }

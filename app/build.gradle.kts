@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.hz_apps.autowificonnector"
-    compileSdk = 34
+    compileSdk = 35
 
     lint {
         baseline = file("lint-baseline.xml")

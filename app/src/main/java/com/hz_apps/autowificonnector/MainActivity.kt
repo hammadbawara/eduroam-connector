@@ -1,25 +1,23 @@
 package com.hz_apps.autowificonnector
 
-import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.hz_apps.aboutme.AboutMeActivity
-import com.hz_apps.autowificonnector.database.WifiConfig
 import com.hz_apps.autowificonnector.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTouchHelperCallback {
@@ -93,34 +91,38 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         }
     }
 
+    private fun connectAndShowSnackBar(position: Int) {
+        viewModel.connectWith(position,
+            onSuccess = {
+                adapter.updateWiFiID(it)
+                Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT).show()
+            },
+            onError = {
+                Snackbar.make(bindings.root, it, Snackbar.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    private fun deleteItem(position: Int) {
+        val wifiConfig = viewModel.wifiConfigData.value?.get(position)
+        viewModel.deleteItem(wifiConfig) {
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+            FirebaseLogger.logWifiDeleted(wifiConfig?.identity ?: "")
+        }
+    }
+
     override fun onItemClicked(position: Int) {
         val wifiConfig = viewModel.wifiConfigData.value?.get(position)
         val dialog = MaterialAlertDialogBuilder(this)
         dialog.setTitle(wifiConfig?.ssid)
         dialog.setMessage(wifiConfig?.identity)
         dialog.setPositiveButton("Connect") { dialogInterface: DialogInterface, _: Int ->
-            viewModel.connectWith(position, viewModel.wifiConfigData.value ?: emptyList(),
-                onSuccess = {
-                    adapter.updateWiFiID(it)
-                    Snackbar.make(bindings.root, "Connect Request is sent", Snackbar.LENGTH_SHORT).show()
-                    FirebaseLogger.logWifiConnected(wifiConfig?.identity ?: "")
-                },
-                onError = {
-                    Snackbar.make(bindings.root, it, Snackbar.LENGTH_SHORT).show()
-                    FirebaseLogger.logWifiConnectFailed(wifiConfig?.identity ?: "")
-                }
-            )
+            connectAndShowSnackBar(position)
             dialogInterface.dismiss()
         }
         dialog.setNegativeButton("Cancel") { dialogInterface: DialogInterface, _: Int ->
             dialogInterface.dismiss()
             FirebaseLogger.logBtnClick("Click Dialog Btn")
-        }
-        dialog.setNeutralButton("Delete") { _: DialogInterface, _: Int ->
-            viewModel.deleteItem(wifiConfig) {
-                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
-                FirebaseLogger.logWifiDeleted(wifiConfig?.identity ?: "")
-            }
         }
         dialog.show()
     }
@@ -129,8 +131,44 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         onItemClicked(position)
     }
 
-    override fun OnRightBtnClick(position: Int) {
-        onItemClicked(position)
+    override fun onMoreOptionClicked(position: Int, view: View) {
+        val popMenuStyle = TypedValue()
+        this.theme.resolveAttribute(com.google.android.material.R.attr.popupMenuStyle, popMenuStyle, true)
+
+        val popupMenu = PopupMenu(this, view, 0, 0, popMenuStyle.resourceId)
+        popupMenu.menu.add("Connect")
+        popupMenu.menu.add("Edit")
+        popupMenu.menu.add("Delete")
+        popupMenu.setOnMenuItemClickListener {
+            when (it.title) {
+                "Connect" -> {
+                    connectAndShowSnackBar(position)
+                }
+                "Edit" -> {
+                    launchEditWifiConfigActivity(position)
+                }
+                "Delete" -> {
+                    deleteItem(position)
+                }
+            }
+            true
+        }
+        popupMenu.show()
+    }
+
+    private fun launchEditWifiConfigActivity(position: Int) {
+        val wifiConfig = viewModel.wifiConfigData.value?.get(position)!!
+            if (wifiConfig.isEditAllowed) {
+                val intent = Intent(this, AddViewActivity::class.java)
+                intent.putExtra("id", wifiConfig.id)
+                intent.putExtra("ssid", wifiConfig.ssid)
+                intent.putExtra("identity", wifiConfig.identity)
+                intent.putExtra("password", wifiConfig.password)
+                intent.putExtra("domain", wifiConfig.domain)
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "You can't edit this", Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

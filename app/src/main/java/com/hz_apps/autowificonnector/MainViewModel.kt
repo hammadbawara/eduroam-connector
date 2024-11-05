@@ -98,7 +98,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return isConnected
     }
 
-    fun connectWith(position: Int, wifiConfigList: List<WifiConfig>, onSuccess: (Int) -> Unit, onError: (String) -> Unit) {
+    fun connectWith(position: Int, onSuccess: (Int) -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val wifiConfig = wifiConfigList.getOrNull(position)
             if (wifiConfig != null) {
@@ -109,11 +109,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 withContext(Dispatchers.Main) {
                     if (isConnected) {
+                        onSuccess(wifiConfig.id)
                         _connectTimes.value = _connectTimes.value?.plus(1)
                         updateSharedPreferences(wifiConfig.id)
-                        onSuccess(wifiConfig.id)
+                        FirebaseLogger.logWifiConnected(wifiConfig?.identity ?: "")
                     } else {
                         onError("Failed to send connect request")
+                        FirebaseLogger.logWifiConnectFailed(wifiConfig?.identity ?: "")
                     }
                 }
 
