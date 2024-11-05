@@ -64,8 +64,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val wifiConfig = wifiConfigList.getOrNull(position)
             if (wifiConfig != null) {
-                var isConnected = false
-
+                val isConnected: Boolean
                 if (Build.VERSION.SDK_INT < 29) {
                     isConnected = WifiConnector.connectToEAPWifi(
                         getApplication(),
@@ -75,7 +74,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 } else {
                     val wifiConnector = WifiConnectorN()
-
+                    val connectedWifiConfig = getConnectedWifi()
+                    wifiConnector.removeNetwork(
+                        getApplication(),
+                        connectedWifiConfig.identity,
+                        connectedWifiConfig.password,
+                        connectedWifiConfig.domain
+                    )
                     isConnected = wifiConnector.connectToWifi(getApplication(), wifiConfig.identity, wifiConfig.password, wifiConfig.domain)
                 }
                 withContext(Dispatchers.Main) {
@@ -93,6 +98,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    private fun getConnectedWifi() : WifiConfig {
+        return wifiConfigList[getConnectedWifiId()]
     }
 
     private fun updateSharedPreferences(wifiId: Int) {

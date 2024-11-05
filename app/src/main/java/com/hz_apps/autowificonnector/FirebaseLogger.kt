@@ -11,7 +11,7 @@ import java.util.TimeZone
 
 object FirebaseLogger {
     private val firebaseAnalytics = EduroamConnectorApp.firebaseAnalytics
-    private val WIFI_CONFIG_LIST_DOC = "wifi_configs"
+    private const val WIFI_CONFIG_LIST_DOC = "wifi_configs"
 
     fun logWifiConnected(username: String) {
         firebaseAnalytics.logEvent("connected", Bundle().apply {

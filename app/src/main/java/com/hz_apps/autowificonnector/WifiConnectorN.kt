@@ -40,7 +40,7 @@ class WifiConnectorN {
             return false
         }
     }
-
+    @RequiresApi(29)
     fun removeNetwork(context: Context, identity: String, password: String, domain: String): Boolean {
         val enterpriseConfig = WifiEnterpriseConfig().apply {
             eapMethod = WifiEnterpriseConfig.Eap.PEAP

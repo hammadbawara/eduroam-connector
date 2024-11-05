@@ -29,7 +29,7 @@
             android:id="@+id/identity_tv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Identity (identity@edu.xx)" />
+            android:hint="Identity" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -40,7 +40,7 @@
             android:id="@+id/domain_tv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Domain (example.edu.xx)" />
+            android:hint="Domain" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
