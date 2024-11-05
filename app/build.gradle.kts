@@ -19,8 +19,8 @@ android {
         applicationId = "com.hz_apps.autowificonnector"
         minSdk = 24
         targetSdk = 35
-        versionCode = 14
-        versionName = "2024.10.16"
+        versionCode = 15
+        versionName = "2024.11.05"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -79,5 +79,4 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
 
     implementation(project(path = ":aboutme"))
-    implementation(project(path = ":activation"))
 }

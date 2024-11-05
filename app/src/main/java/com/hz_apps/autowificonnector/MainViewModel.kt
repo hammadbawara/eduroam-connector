@@ -54,7 +54,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             shouldUpload = true
         }
 
-        if (sharedPreferences.getBoolean("is_activated", false)) {
+        if (sharedPreferences.getBoolean("is_activated1", false)) {
             isActivated = true
         }
 
@@ -149,7 +149,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun getConnectedWifi() : WifiConfig? {
         val connectedWifiID = getConnectedWifiId()
         if (connectedWifiID != -1) {
-            return wifiConfigList[getConnectedWifiId()]
+            for (wifiConfig in wifiConfigList) {
+                if (wifiConfig.id == connectedWifiID) {
+                    return wifiConfig
+                }
+            }
         }
         return null
     }

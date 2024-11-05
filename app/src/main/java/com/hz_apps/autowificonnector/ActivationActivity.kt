@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.hz_apps.activation.Activation.generateSecureActivationCode
 import com.hz_apps.autowificonnector.databinding.ActivityActivationBinding
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -37,11 +36,11 @@ class ActivationActivity : AppCompatActivity() {
 
         binding.activateBtn.setOnClickListener {
             val text = binding.activationCodeET.text.toString()
-            if (text == generateSecureActivationCode(uuid)) {
+            if (text == generateSecureActivationCode1(uuid)) {
                 FirebaseLogger.logBtnClick("Activate button")
                 FirebaseLogger.activatedWithKey(text)
                 val sharedPreferences = getSharedPreferences("main", MODE_PRIVATE)
-                sharedPreferences.edit().putBoolean("is_activated", true).apply()
+                sharedPreferences.edit().putBoolean("is_activated1", true).apply()
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
                 finish()
