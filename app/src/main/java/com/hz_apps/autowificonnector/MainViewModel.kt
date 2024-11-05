@@ -3,8 +3,10 @@ package com.hz_apps.autowificonnector
 import android.app.Application
 import android.content.SharedPreferences
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
 import com.hz_apps.autowificonnector.database.AppDatabase
@@ -26,6 +28,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     get
     private set
 
+    private val _connectTimes = MutableLiveData(0)
+    val connectTimes: LiveData<Int>
+        get() = _connectTimes
+
     var isActivated = false
     get
     private set
@@ -46,6 +52,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (sharedPreferences.getBoolean("is_activated", false)) {
             isActivated = true
         }
+
+        _connectTimes.value = getConnectedTimes()
     }
 
     fun onItemMove(fromPosition: Int, toPosition: Int) {
@@ -60,31 +68,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun connectWith(wifiConfig: WifiConfig) : Boolean{
+        val isConnected = WifiConnector.connectToEAPWifi(
+            getApplication(),
+            wifiConfig.ssid,
+            wifiConfig.identity,
+            wifiConfig.password
+        )
+        return isConnected
+    }
+
+    @RequiresApi(29)
+    private fun connectWith29(wifiConfig: WifiConfig) : Boolean {
+        val wifiConnector = WifiConnectorN()
+        val connectedWifiConfig = getConnectedWifi()
+        wifiConnector.removeNetwork(
+            getApplication(),
+            connectedWifiConfig.identity,
+            connectedWifiConfig.password,
+            connectedWifiConfig.domain
+        )
+        val isConnected = wifiConnector
+            .connectToWifi(
+                getApplication(),
+                wifiConfig.identity,
+                wifiConfig.password,
+                wifiConfig.domain
+            )
+        return isConnected
+    }
+
     fun connectWith(position: Int, wifiConfigList: List<WifiConfig>, onSuccess: (Int) -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val wifiConfig = wifiConfigList.getOrNull(position)
             if (wifiConfig != null) {
-                val isConnected: Boolean
-                if (Build.VERSION.SDK_INT < 29) {
-                    isConnected = WifiConnector.connectToEAPWifi(
-                        getApplication(),
-                        wifiConfig.ssid,
-                        wifiConfig.identity,
-                        wifiConfig.password
-                    )
-                } else {
-                    val wifiConnector = WifiConnectorN()
-                    val connectedWifiConfig = getConnectedWifi()
-                    wifiConnector.removeNetwork(
-                        getApplication(),
-                        connectedWifiConfig.identity,
-                        connectedWifiConfig.password,
-                        connectedWifiConfig.domain
-                    )
-                    isConnected = wifiConnector.connectToWifi(getApplication(), wifiConfig.identity, wifiConfig.password, wifiConfig.domain)
-                }
+                val isConnected = if (Build.VERSION.SDK_INT < 29)
+                    connectWith(wifiConfig)
+                else
+                    connectWith29(wifiConfig)
+
                 withContext(Dispatchers.Main) {
                     if (isConnected) {
+                        _connectTimes.value = _connectTimes.value?.plus(1)
                         updateSharedPreferences(wifiConfig.id)
                         onSuccess(wifiConfig.id)
                     } else {
@@ -107,7 +132,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun updateSharedPreferences(wifiId: Int) {
         with(sharedPreferences.edit()) {
             putInt("id", wifiId)
-            putInt("connect_times", getConnectedTimes() + 1)
+            _connectTimes.value?.let { putInt("connect_times", it) }
             apply()
         }
     }
@@ -119,13 +144,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun getConnectedTimes(): Int {
         return sharedPreferences.getInt("connect_times", 0)
-    }
-
-    fun setConnectedTimes(callback: (Int) -> Unit) {
-        val connectTimes = getConnectedTimes()
-        viewModelScope.launch(Dispatchers.Main) {
-            callback(connectTimes)
-        }
     }
 
     fun deleteItem(wifiConfig: WifiConfig?, onError: (String) -> Unit) {

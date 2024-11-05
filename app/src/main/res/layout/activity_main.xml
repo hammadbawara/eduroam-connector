@@ -25,6 +25,7 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="30dp"
         android:clipToPadding="true"
+        tools:listitem="@layout/item_layout"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

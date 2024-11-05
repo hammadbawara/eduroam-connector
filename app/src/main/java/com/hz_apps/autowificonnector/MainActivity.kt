@@ -46,9 +46,9 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         // Setup RecyclerView
         bindings.recyclerView.adapter = adapter
         val itemTouchHelper = ItemTouchHelper(MyItemTouchHelper { fromPosition, toPosition ->
-            viewModel.onItemMove(fromPosition, toPosition) // Notify ViewModel of the move
-            viewModel.updateWiFiConfigOrder() // Update the database
-            adapter.onItemMove(fromPosition, toPosition) // Notify the adapter of the move
+            viewModel.onItemMove(fromPosition, toPosition)
+            viewModel.updateWiFiConfigOrder()
+            adapter.onItemMove(fromPosition, toPosition)
             FirebaseLogger.logItemMoved("item_moved")
         })
         itemTouchHelper.attachToRecyclerView(bindings.recyclerView)
@@ -83,10 +83,9 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
             }
         }
 
-        // Set connected times on screen
-        viewModel.setConnectedTimes {
+        viewModel.connectTimes.observe(this, Observer {
             bindings.connectTimes.text = "Connected: $it"
-        }
+        })
 
         val connectedWifiId = viewModel.getConnectedWifiId()
         if (connectedWifiId != -1) {
