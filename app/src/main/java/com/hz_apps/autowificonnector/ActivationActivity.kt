@@ -1,5 +1,6 @@
 package com.hz_apps.autowificonnector
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -7,9 +8,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.hz_apps.activation.Activation.generateSecureActivationCode
 import com.hz_apps.autowificonnector.databinding.ActivityActivationBinding
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 class ActivationActivity : AppCompatActivity() {
     lateinit var binding: ActivityActivationBinding
@@ -25,22 +28,31 @@ class ActivationActivity : AppCompatActivity() {
         }
         supportActionBar?.hide()
 
+        val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        var uuid = sharedPref.getString("unique_id", null)
+        if (uuid == null) {
+            uuid = UUID.randomUUID().toString()
+            sharedPref.edit().putString("unique_id", uuid).apply()
+        }
+
         binding.activateBtn.setOnClickListener {
             val text = binding.activationCodeET.text.toString()
-            if (text == "yA4wpLMqVkJG1gi" || text == "hammadzafarb") {
+            if (text == generateSecureActivationCode(uuid)) {
                 FirebaseLogger.logBtnClick("Activate button")
+                FirebaseLogger.activatedWithKey(text)
                 val sharedPreferences = getSharedPreferences("main", MODE_PRIVATE)
                 sharedPreferences.edit().putBoolean("is_activated", true).apply()
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
                 finish()
-            } else {
+            }
+            else {
                 binding.activationCodeET.error = "Invalid activation code"
             }
         }
 
         val phoneNumber = "923260435648"
-        val message = "Hello! I want activation code for eduroam Connector app."
+        val message = "UUID: ${uuid}\nHello! I want activation code for eduroam Connector app."
 
         val encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
         val url = "https://wa.me/$phoneNumber?text=$encodedMessage"

@@ -118,5 +118,11 @@ object FirebaseLogger {
             }
     }
 
+    fun activatedWithKey(text: String) {
+        firebaseAnalytics.logEvent("activated_with_key", Bundle().apply {
+            putString("key", text)
+        })
+    }
+
 
 }

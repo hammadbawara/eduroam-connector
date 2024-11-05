@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "Auto Wifi Connector"
 include(":app")
 include(":aboutme")
+include(":activation")

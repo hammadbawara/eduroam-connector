@@ -32,7 +32,10 @@ android {
             )
         }
         debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
             isMinifyEnabled = false
+
         }
     }
 
@@ -76,4 +79,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
 
     implementation(project(path = ":aboutme"))
+    implementation(project(path = ":activation"))
 }
