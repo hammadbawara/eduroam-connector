@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedDispatcher
 import androidx.appcompat.app.AppCompatActivity
@@ -51,12 +52,12 @@ class AddViewActivity : AppCompatActivity() {
             FirebaseLogger.logBtnClick("Save button")
         }
 
-        if (Build.VERSION.SDK_INT > 29) {
-            bindings.domainTv.isEnabled = true
+        if (Build.VERSION.SDK_INT >= 29) {
+            bindings.domainTv.visibility = View.VISIBLE
             domain = intent.getStringExtra("domain") ?: ""
             bindings.domainTv.setText(domain)
         } else {
-            bindings.domainTv.isEnabled = false
+            bindings.domainTv.visibility = View.GONE
         }
 
         bindings.identityTv.addTextChangedListener(object : TextWatcher {
@@ -64,7 +65,13 @@ class AddViewActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val text = s.toString()
+                if (Build.VERSION.SDK_INT >= 29) {
+                    val inputTextParts = s.toString().trim().split("@")
+                    if (inputTextParts.size > 1) {
+                        bindings.domainTv.setText(inputTextParts[1])
+                    }
+
+                }
             }
 
             override fun afterTextChanged(s: Editable?) {
