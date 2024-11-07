@@ -22,7 +22,7 @@ class WifiConnectorN {
             this.anonymousIdentity = identity
         }
 
-        enterpriseConfig.caCertificates = getSystemCertificates()
+        enterpriseConfig.caCertificates = getSystemCertificates(domain)
 
         val wifiNetworkSuggestion = WifiNetworkSuggestion.Builder().apply {
             setSsid("eduroam")
@@ -52,7 +52,7 @@ class WifiConnectorN {
             this.anonymousIdentity = identity
         }
 
-        enterpriseConfig.caCertificates = getSystemCertificates()
+        enterpriseConfig.caCertificates = getSystemCertificates(domain)
 
         val wifiNetworkSuggestion = WifiNetworkSuggestion.Builder().apply {
             setSsid("eduroam")
@@ -71,7 +71,7 @@ class WifiConnectorN {
         }
     }
 
-    fun getSystemCertificates(): Array<X509Certificate>? {
+    private fun getSystemCertificates(domain: String): Array<X509Certificate>? {
         return try {
             val keyStore = KeyStore.getInstance("AndroidCAStore")
             keyStore.load(null)
@@ -79,11 +79,11 @@ class WifiConnectorN {
             val certificates = mutableListOf<X509Certificate>()
 
             val aliases = keyStore.aliases()
-            while (aliases.hasMoreElements()) {
+            while (aliases.hasMoreElements() && certificates.size <= 100) {
                 val alias = aliases.nextElement()
 
                 val cert = keyStore.getCertificate(alias)
-                if (cert is X509Certificate) {
+                if (cert is X509Certificate && cert.subjectDN.name.contains(domain)) {
                     certificates.add(cert)
                 }
             }
