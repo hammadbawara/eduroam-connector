@@ -42,11 +42,11 @@
         app:layout_constraintTop_toBottomOf="@+id/progressBar"
         tools:listitem="@layout/item_layout" />
 
-    <TextView
+    <Button
         android:id="@+id/no_item_saved"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No Item Saved"
+        android:text="Watch Tutorial"
         android:textSize="16sp"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"

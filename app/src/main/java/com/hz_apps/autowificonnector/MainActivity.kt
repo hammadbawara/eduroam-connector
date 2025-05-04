@@ -1,5 +1,6 @@
 package com.hz_apps.autowificonnector
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.snackbar.Snackbar
 import com.hz_apps.aboutme.AboutMeActivity
 import com.hz_apps.autowificonnector.databinding.ActivityMainBinding
+import androidx.core.net.toUri
 
 class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTouchHelperCallback {
 
@@ -99,6 +101,14 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
         viewModel.showProgressBar.observe(this){ show->
             val visibility = if (show) View.VISIBLE else View.GONE
             bindings.progressBar.visibility = visibility
+        }
+
+
+
+        bindings.noItemSaved.setOnClickListener {
+            val browserIntent = Intent(Intent.ACTION_VIEW,
+                "https://www.youtube.com/watch?v=lbbnTq1b6kk".toUri())
+            startActivity(browserIntent)
         }
     }
 
