@@ -9,7 +9,10 @@ import android.util.Patterns
 import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hz_apps.autowificonnector.database.AppDatabase
 import com.hz_apps.autowificonnector.database.WifiConfig
@@ -27,6 +30,13 @@ class AddViewActivity : AppCompatActivity() {
     private var domain = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        ViewCompat.setOnApplyWindowInsetsListener(bindings.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
         bindings = ActivityAddViewBinding.inflate(layoutInflater)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         setContentView(bindings.root)
