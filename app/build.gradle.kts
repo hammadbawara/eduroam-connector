@@ -19,8 +19,8 @@ android {
         applicationId = "com.hz_apps.autowificonnector"
         minSdk = 24
         targetSdk = 35
-        versionCode = 15
-        versionName = "2024.11.06"
+        versionCode = 17
+        versionName = "2025.05.05"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
