@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "271598513254",
+    "project_id": "eduroam-connector-a6ff6",
+    "storage_bucket": "eduroam-connector-a6ff6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271598513254:android:d1feb0ac846fec08e551a7",
+        "android_client_info": {
+          "package_name": "com.hz_apps.autowificonnector"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClZOy0PCPO2p4WljFBs48u5axzj9LTICU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271598513254:android:c35a1444c796f1a7e551a7",
+        "android_client_info": {
+          "package_name": "com.hz_apps.autowificonnector.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClZOy0PCPO2p4WljFBs48u5axzj9LTICU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

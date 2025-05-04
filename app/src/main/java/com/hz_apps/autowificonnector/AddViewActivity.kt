@@ -30,14 +30,13 @@ class AddViewActivity : AppCompatActivity() {
     private var domain = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        bindings = ActivityAddViewBinding.inflate(layoutInflater)
         enableEdgeToEdge()
         ViewCompat.setOnApplyWindowInsetsListener(bindings.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        bindings = ActivityAddViewBinding.inflate(layoutInflater)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         setContentView(bindings.root)
 
@@ -98,6 +97,7 @@ class AddViewActivity : AppCompatActivity() {
         val identity = bindings.identityTv.text.toString()
         val password = bindings.passwordTv.text.toString()
         val domain = bindings.domainTv.text.toString()
+        val editAllowed = bindings.allowEditCheckBox.isChecked
 
         bindings.identityTv.error = null
         bindings.ssidTv.error = null
@@ -131,7 +131,7 @@ class AddViewActivity : AppCompatActivity() {
                     identity = identity,
                     password = password,
                     domain = domain,
-                    isEditAllowed = true
+                    isEditAllowed = editAllowed
                 )
             } else {
                 wifiConfig = WifiConfig(id, ssid, identity, password, domain, true, dbDao.getMaxOrder() + 1)

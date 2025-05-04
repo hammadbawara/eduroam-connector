@@ -31,22 +31,22 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        bindings = ActivityMainBinding.inflate(layoutInflater)
         enableEdgeToEdge()
         ViewCompat.setOnApplyWindowInsetsListener(bindings.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        bindings = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-        if (!viewModel.isActivated) {
-            val intent = Intent(this, ActivationActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
+//        if (!viewModel.isActivated) {
+//            val intent = Intent(this, ActivationActivity::class.java)
+//            startActivity(intent)
+//            finish()
+//        }
 
         // Setup RecyclerView
         bindings.recyclerView.adapter = adapter
@@ -184,7 +184,7 @@ class MainActivity : AppCompatActivity(), WifiViewAdapter.ItemListeners , ItemTo
             intent.putExtra("domain", wifiConfig.domain)
             startActivity(intent)
         } else {
-            Toast.makeText(this, "You can't edit this", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Edit is not allowed", Toast.LENGTH_SHORT).show()
         }
     }
 
