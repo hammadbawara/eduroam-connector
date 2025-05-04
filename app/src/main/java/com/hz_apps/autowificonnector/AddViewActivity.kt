@@ -97,7 +97,7 @@ class AddViewActivity : AppCompatActivity() {
         val identity = bindings.identityTv.text.toString()
         val password = bindings.passwordTv.text.toString()
         val domain = bindings.domainTv.text.toString()
-        val editAllowed = bindings.allowEditCheckBox.isChecked
+        val isEditAllowed = bindings.allowEditCheckBox.isChecked
 
         bindings.identityTv.error = null
         bindings.ssidTv.error = null
@@ -131,10 +131,10 @@ class AddViewActivity : AppCompatActivity() {
                     identity = identity,
                     password = password,
                     domain = domain,
-                    isEditAllowed = editAllowed
+                    isEditAllowed = isEditAllowed
                 )
             } else {
-                wifiConfig = WifiConfig(id, ssid, identity, password, domain, true, dbDao.getMaxOrder() + 1)
+                wifiConfig = WifiConfig(id, ssid, identity, password, domain, isEditAllowed, dbDao.getMaxOrder() + 1)
             }
             dbDao.insert(wifiConfig)
 
@@ -155,7 +155,7 @@ class AddViewActivity : AppCompatActivity() {
         val identity = bindings.identityTv.text.toString()
         val password = bindings.passwordTv.text.toString()
         if (ssid == this.ssid && identity == this.identity && password == this.password) {
-            OnBackPressedDispatcher().onBackPressed()
+            onBackPressedDispatcher.onBackPressed()
         } else {
             askBeforeExiting()
         }
